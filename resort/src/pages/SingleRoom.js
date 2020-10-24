@@ -34,6 +34,7 @@ export default class SingleRoom extends Component {
 				</div>
 			)
 		}
+		
 		const { 
 		name, 
 		description, 
