@@ -1,5 +1,8 @@
 import React, { Component } from 'react'
-import items from './data'
+// import items from './data'
+import Client from './contentful'
+
+// consume the data from the contentful database
 
 const RoomContext = React.createContext()
 // creates a new context object to hold room data
@@ -10,26 +13,56 @@ export default class RoomProvider extends Component {
 		rooms: [],
 		sortedRooms: [],
 		featuredRooms: [],
-		loading: false,
+		loading: true,
+		type: 'all',
+		capacity: 1,
+		price: 0,
+		minPrice: 0,
+		maxPrice: 0,
+		minSize: 0,
+		maxSize: 0,
+		breakfast: false,
+		pets: false,
 	}
+
 	// getData
+
+	getData = async () => {
+		try {
+			let res = await Client.getEntries({
+				content_type: 'name',
+			})
+			// variable rooms stores the retrieved and formatted room data from back end
+			let rooms = this.formatData(res.items)
+			console.log(rooms)
+			// storing only the featured rooms to allow users to filter results
+			let featuredRooms = rooms.filter(room => room.featured === true)
+			let maxPrice = Math.max(...rooms.map(item => item.price))
+			let maxSize = Math.max(...rooms.map(item => item.size))
+
+			this.setState({
+				rooms,
+				featuredRooms,
+				sortedRooms: rooms,
+				loading: false,
+				maxPrice,
+				maxSize,
+				description: rooms.description,
+				extras: rooms.extras,
+			})
+		} catch (err) {
+			console.log(err)
+		}
+	}
+
 	componentDidMount() {
-		// variable rooms stores the retrieved and formatted room data from back end
-		let rooms = this.formatData(items)
-		console.log(rooms)
-		// storing only the featured rooms to allow users to filter results
-		let featuredRooms = rooms.filter(room => room.featured === true)
-		this.setState({
-			rooms,
-			featuredRooms,
-			sortedRooms: rooms,
-			loading: false,
-		})
+		// run the getData function
+		this.getData()
 	}
 
 	// function to take deeply nested raw data from back end and format it for ease of use
-	formatData(items) {
-		let tempItems = items.map(item => {
+	formatData(rooms) {
+		let tempItems = rooms.map(item => {
 			// storing the id for each item in its own variable
 			let id = item.sys.id
 			// map over the images array and return the image urls
@@ -49,12 +82,65 @@ export default class RoomProvider extends Component {
 		return room
 	}
 
+	handleChange = event => {
+		const target = event.target
+		const value = target.type === 'checkbox' ? target.checked : target.value
+		const name = event.target.name
+		this.setState(
+			{
+				[name]: value,
+			},
+			this.filterRooms,
+		)
+	}
+
+	filterRooms = () => {
+		let { rooms, type, capacity, price, minSize, maxSize, breakfast, pets } = this.state
+		//  all the rooms
+		let tempRooms = [ ...rooms ]
+
+		// transform value
+		capacity = parseInt(capacity)
+
+		// filter by type
+		if (type !== 'all') {
+			tempRooms = tempRooms.filter(room => room.type === type)
+		}
+
+		// filter by capacity
+		if (capacity !== 1) {
+			tempRooms = tempRooms.filter(room => room.capacity >= capacity)
+		}
+
+		// filter by price
+		tempRooms = tempRooms.filter(room => room.price <= price)
+
+		// filter by size
+		tempRooms = tempRooms.filter(room => room.size >= minSize && room.size <= maxSize)
+
+		// filter by breakfast
+		if (breakfast) {
+			tempRooms = tempRooms.filter(room => room.breakfast === true)
+		}
+
+		// filter by pets
+		if (pets) {
+			tempRooms = tempRooms.filter(room => room.pets === true)
+		}
+
+		// change state
+		this.setState({
+			sortedRooms: tempRooms,
+		})
+	}
+
 	render() {
 		return (
 			<RoomContext.Provider
 				value={{
 					...this.state,
 					getRoom: this.getRoom,
+					handleChange: this.handleChange,
 				}}
 			>
 				{this.props.children}
