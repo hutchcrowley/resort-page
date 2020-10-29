@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "type": "draft",
+      "request": "launch",
+      "name": "Draft Debug",
+      "original-debug": {
+        "type": "node",
+        "request": "attach",
+        "name": "Attach to remote",
+        "address": "localhost",
+        "port": 9229,
+        "remoteRoot": "/usr/src/app/"
+      }
+    },
+    {
+      "type": "firefox",
+      "request": "attach",
+      "name": "Attach"
+    }
+  ]
+}
