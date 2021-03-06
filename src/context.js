@@ -1,5 +1,6 @@
 import React, { Component } from 'react'
 // for loading data from local machine during development
+
 // import items from './data'
 import Client from './Contentful'
 
